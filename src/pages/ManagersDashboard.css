@@ -1,6 +1,6 @@
 /* General styles */
 .managers-dashboard-container {
-    max-width: 1000px;
+    width: 1500px;
     margin: 40px auto;
     padding: 20px;
     background: lightblue ;

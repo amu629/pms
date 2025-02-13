@@ -15,6 +15,7 @@ import Popover from '@mui/material/Popover';
 import Link from '@mui/material/Link';
 import LinearProgress from '@mui/material/LinearProgress';
 import {Textarea, Select, Option, Button} from '@mui/joy';
+import Rating from '@mui/material/Rating';
 
 const ManagersDashboard = (props) => {
 
@@ -23,8 +24,14 @@ const ManagersDashboard = (props) => {
     const [goals, setGoals] = React.useState("");
     const [empEmailForGoals, setEmpEmailForGoals] = React.useState("");
     const [empEmailForFeedback, setEmpEmailForFeedback] = React.useState("");
+    const [empEmailForTraining, setEmpEmailForTraining] = React.useState("");
     const [goalsValue, setGoalsValue] = React.useState("");
+    const [kpiValue, setKpiValue] = React.useState("");
+    const [kraValue, setKraValue] = React.useState("");
     const [feedbackValue, setFeedbackValue] = React.useState("");
+    const [trainingValue, setTrainingValue] = React.useState("");
+    const [ratingValue, setRatingValue] = React.useState(0);
+    const [hover, setHover] = React.useState(-1);
 
     useEffect(() => {
         const fetchEmployeeDetail = async() => {
@@ -47,24 +54,40 @@ const ManagersDashboard = (props) => {
 
     const handleSelectChangeForGoal = (e, newValue) => {
         console.log(newValue)
-        setEmpEmailForGoals(newValue)
+        setEmpEmailForGoals(newValue);
     }
 
     const handleSelectChangeForFeedback = (e, newValue) => {
         console.log(newValue)
-        setEmpEmailForFeedback(newValue)
+        setEmpEmailForFeedback(newValue);
+    }
+
+    const handleSelectChangeForTraining = (e, newValue) => {
+        setEmpEmailForTraining(newValue);
     }
 
     const onGoalsChange = (e) => {
         setGoalsValue(e.target.value);
     }
 
+    const onKpiChange = (e) => {
+        setKpiValue(e.target.value);
+    }
+
+    const onKraChange = (e) => {
+        setKraValue(e.target.value);
+    }
+
     const onFeedbackChange = (e) => {
         setFeedbackValue(e.target.value);
     }
 
+    const onAssignTrainingChange = (e) => {
+        setTrainingValue(e.target.value);
+    }
+
     const handleAssignGoal = () => {
-        if(empEmailForGoals === "") {
+        if(empEmailForGoals === "" || empEmailForGoals === null) {
             alert("Select employee");
             return;
         }
@@ -73,7 +96,17 @@ const ManagersDashboard = (props) => {
             return;
         }
 
-        const goal = {goal: goalsValue, status: 0};
+        if(kpiValue === "") {
+            alert("Enter Kpi");
+            return;
+        }
+
+        if(kraValue === "") {
+            alert("Enter Kra");
+            return;
+        }
+
+        const goal = {goal: goalsValue, status: 0, KPI: kpiValue, KRA: kraValue};
 
         const updateGoals = async (email, goal) => {
             try {
@@ -109,6 +142,7 @@ const ManagersDashboard = (props) => {
         }
 
         const feedback = {text: feedbackValue};
+        const managersRating = {rating: String(ratingValue)}
 
         const updateFeedback = async (email, feedback) => {
             try {
@@ -117,19 +151,55 @@ const ManagersDashboard = (props) => {
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify({ feedback: feedback }),
+                    body: JSON.stringify({ feedback: feedback, managersRating: managersRating }),
                 });
                 const data = await response.json();
                 if(data.status === '200') {
                     alert('Feedback updated successfully');
                     setEmpEmailForFeedback("");
                     setFeedbackValue("");
+                    setRatingValue(0);
                 }
             } catch (error) {
                 console.error('Error updating Feedback:', error);
             }
         };
         updateFeedback(empEmailForFeedback, feedback);
+    }
+
+    const handleAssignTraining = () => {
+        if(empEmailForTraining === "") {
+            alert("Select employee");
+            return;
+        }
+
+        if(trainingValue === "") {
+            alert("Enter Training");
+            return;
+        }
+
+        const training = {text: trainingValue};
+
+        const updateTraining = async (email, training) => {
+            try {
+                const response = await fetch(`http://localhost:3333/api/details/addTraining/${email}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ training: training }),
+                });
+                const data = await response.json();
+                if(data.status === '200') {
+                    alert('Training updated successfully');
+                    setEmpEmailForTraining("");
+                    setTrainingValue("");
+                }
+            } catch (error) {
+                console.error('Error updating Training:', error);
+            }
+        };
+        updateTraining(empEmailForTraining, training);
     }
 
     const [anchorEl, setAnchorEl] = React.useState(null);
@@ -168,9 +238,10 @@ const ManagersDashboard = (props) => {
                     <TabContext value={value}>
                         <Box sx={{ borderBottom: 1, borderColor: 'divider', bgcolor: 'bisque' }}>
                             <TabList onChange={handleChange} aria-label="lab API tabs example">
-                            <Tab label="List of employees" value="1"/>
-                            <Tab label="Assign Goals" value="2" />
-                            <Tab label="Feedback" value="3"/>
+                            <Tab label="List of employees" value="1" style={{width: "25%"}}/>
+                            <Tab label="Assign Goals" value="2" style={{width: "25%"}}/>
+                            <Tab label="Feedback" value="3" style={{width: "25%"}}/>
+                            <Tab label="Assign Trainings" value="4" style={{width: "25%"}}/>
                             </TabList>
                         </Box>
 
@@ -187,10 +258,12 @@ const ManagersDashboard = (props) => {
                                             <TableCell>Email</TableCell>
                                             <TableCell>Role</TableCell>
                                             <TableCell>Year of Experience</TableCell>
+                                            <TableCell style={{paddingLeft: "40px"}}>Competencies</TableCell>
+                                            <TableCell>Customer's Rating</TableCell>
                                         </TableRow>
                                     </TableHead>
                                     <TableBody>
-                                    {props.details.employees.map((row, index) => (
+                                    {empDetails && empDetails.length && empDetails.map((row, index) => (
                                         <TableRow
                                             key={index}
                                             sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
@@ -201,7 +274,21 @@ const ManagersDashboard = (props) => {
                                             <TableCell><Link onClick={(event) => handleClick(event, row.email)}>{row.name}</Link></TableCell>
                                             <TableCell>{row.email}</TableCell>
                                             <TableCell>{row.role}</TableCell>
-                                            <TableCell>{row.yoe} years</TableCell>
+                                            <TableCell>{row.experience}</TableCell>
+                                            <TableCell>
+                                                <ol>
+                                                    {row.Competencies.map((competency, index) => {
+                                                        return <li key={index}>{competency.text}</li>
+                                                    })}
+                                                </ol>
+                                            </TableCell>
+                                            <TableCell>
+                                                <Rating
+                                                    precision={0.5}
+                                                    readOnly
+                                                    value={Number(row.CustomerRating[0].rating)}
+                                                />
+                                            </TableCell>
                                         </TableRow>
                                     ))}
                                     </TableBody>
@@ -221,9 +308,13 @@ const ManagersDashboard = (props) => {
                                     </Select>
                                 </div>
                                 <br/><br/>
-                                <Textarea minRows={3} value={goalsValue} placeholder="Assign Goal…" onChange={onGoalsChange}/>
+                                <Textarea minRows={2} value={goalsValue} placeholder="Assign Goal…" onChange={onGoalsChange}/>
                                 <br/><br/>
-                                <Button style={{width: "100px"}} onClick={handleAssignGoal}>Assign Goal</Button>
+                                <Textarea minRows={2} value={kpiValue} placeholder="Assign KPI" onChange={onKpiChange}/>
+                                <br/><br/>
+                                <Textarea minRows={2} value={kraValue} placeholder="Assign KRA" onChange={onKraChange}/>
+                                <br/><br/>
+                                <Button style={{width: "150px"}} onClick={handleAssignGoal}>Assign Goal</Button>
                             </div>
                         </TabPanel>
                         <TabPanel value="3">
@@ -239,9 +330,39 @@ const ManagersDashboard = (props) => {
                                     </Select>
                                 </div>
                                 <br/><br/>
-                                <Textarea minRows={3} placeholder="Write your feedback…" value={feedbackValue} onChange={onFeedbackChange}/>
+                                <Textarea minRows={2} placeholder="Write your feedback…" value={feedbackValue} onChange={onFeedbackChange}/>
+                                <br/><br/>
+                                <Rating
+                                    name="hover-feedback"
+                                    value={ratingValue}
+                                    precision={0.5}
+                                    onChange={(event, newValue) => {
+                                        setRatingValue(newValue);
+                                    }}
+                                    onChangeActive={(event, newHover) => {
+                                        setHover(newHover);
+                                    }}
+                                />
                                 <br/><br/>
                                 <Button style={{width: "100px"}} onClick={handleGiveFeedback}>Send Feedback</Button>
+                            </div>
+                        </TabPanel>
+                        <TabPanel value="4">
+                            <div>
+                                <label>Select Employee to assign Trainings:</label>
+                                <div style={{width: "400px"}}>
+                                    <Select value={empEmailForTraining} onChange={handleSelectChangeForTraining}>
+                                        { 
+                                            empDetails && empDetails.length && empDetails.map((emp, index) => (
+                                                <Option key={index} value={emp.email}>{emp.name}</Option>
+                                            ))
+                                        }
+                                    </Select>
+                                </div>
+                                <br/><br/>
+                                <Textarea minRows={2} placeholder="Assign Training..." value={trainingValue} onChange={onAssignTrainingChange}/>
+                                <br/><br/>
+                                <Button style={{width: "100px"}} onClick={handleAssignTraining}>Send Feedback</Button>
                             </div>
                         </TabPanel>
                     </TabContext>
@@ -269,6 +390,12 @@ const ManagersDashboard = (props) => {
                             <div style={{marginBottom: "10px"}}>
                                 <label>Goal: </label>
                                 <span>{goal.goal}</span>
+                                <br/>
+                                <label>KPI: </label>
+                                <span>{goal.KPI}</span>
+                                <br/>
+                                <label>KRA: </label>
+                                <span>{goal.KRA}</span>
                             </div>
                             <div style={{marginBottom: "10px"}}>
                                 <label>Status: {goal.status}</label>%

@@ -6,6 +6,8 @@ import {TabList, TabPanel, TabContext} from '@mui/lab';
 import Tab from '@mui/material/Tab';
 import Box from '@mui/material/Box';
 import LinearProgress from '@mui/material/LinearProgress';
+import Rating from '@mui/material/Rating';
+import Typography from '@mui/material/Typography';
 import {Button} from '@mui/joy';
 
 
@@ -13,11 +15,21 @@ const EmployeeDashboard = (props) => {
   const [value, setValue] = React.useState('1');
   const [edit, setEdit] = React.useState(false);
   const [empDetails, setEmpDetails] = React.useState(null);
+  const [topPerformer, setTopPerformer] = React.useState({name: "", rating: ""});
   const empDetailsRef = useRef(props);
 
   useEffect(() => {
     setEmpDetails(props)
   }, [props]);
+
+  useEffect(() => {
+    const getTopPerformer = async() => {
+      const response = await fetch(`http://localhost:3333/api/highest-rated-employee`);
+      const data = await response.json();
+      setTopPerformer(data);
+    }
+    getTopPerformer();
+  }, [])
   
   const handleChange = (event, newValue) => {
     setValue(newValue);
@@ -79,15 +91,52 @@ const EmployeeDashboard = (props) => {
           <div>
             <Avatar sx={{ bgcolor: deepOrange[500] }}>{empDetails.details.name.charAt(0)}</Avatar>
             <h2 style={{color: "blueviolet"}}>{empDetails.details.name}</h2>
+            <br/>
+            <div style={{display: "flex", flexDirection: "row", justifyContent: "space-evenly"}}>
+              <div>
+                <Typography>Customer Raiting</Typography>
+                <Rating
+                  precision={0.5}
+                  readOnly
+                  value={Number(empDetails.details.CustomerRating[0].rating)}
+                />
+              </div>
+              <div>
+                <Typography>Manager's Raiting</Typography>
+                <Rating
+                  precision={0.5}
+                  readOnly
+                  value={Number(empDetails.details.ManagersOverallRating[0].rating)}
+                />
+              </div>
+              <div>
+                <Typography>Incentives</Typography>
+                <label>₹{empDetails.details.Incentives[0].text}</label>
+              </div>
+              <div>
+                <Typography>Top Performer</Typography>
+                {topPerformer.name !== "" && 
+                  <>
+                    <Rating
+                      precision={0.5}
+                      readOnly
+                      value={Number(topPerformer[0].CustomerRating[0].rating)}
+                    />
+                    <Box sx={{ ml: 2 }}>{topPerformer[0].name}</Box>
+                  </>
+                }
+              </div>
+            </div>
           </div>
           <br/><br/><br/><br/>
           <Box sx={{ width: '100%', typography: 'body1' }}>
             <TabContext value={value}>
-              <Box sx={{ borderBottom: 1, borderColor: 'divider', bgcolor: 'bisque' }}>
+              <Box sx={{ borderBottom: 1, borderColor: 'divider', bgcolor: 'bisque', width: "100%" }}>
                 <TabList onChange={handleChange} aria-label="lab API tabs example">
-                  <Tab label="Employee Details" value="1"/>
-                  <Tab label="Goals" value="2" />
-                  <Tab label="Feedback" value="3"/>
+                  <Tab label="Employee Details" value="1" style={{width: "25%"}}/>
+                  <Tab label="Goals" value="2" style={{width: "25%"}}/>
+                  <Tab label="Feedback" value="3" style={{width: "25%"}}/>
+                  <Tab label="Trainings" value="4" style={{width: "25%"}}/>
                 </TabList>
               </Box>
 
@@ -140,6 +189,12 @@ const EmployeeDashboard = (props) => {
                           <div style={{marginBottom: "10px"}}>
                             <label>Goal: </label>
                             <span>{goal.goal}</span>
+                            <br/>
+                            <label>KPI: </label>
+                            <span>{goal.KPI}</span>
+                            <br/>
+                            <label>KRA: </label>
+                            <span>{goal.KRA}</span>
                           </div>
                           <div style={{marginBottom: "10px"}}>
                             {!edit ? 
@@ -171,6 +226,35 @@ const EmployeeDashboard = (props) => {
                       <li key={index}>
                         <div style={{marginBottom: "10px"}}>
                           <span>{feedback.text}</span>
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ol>
+              </TabPanel>
+              <TabPanel value="4">
+                <label>Trainings Suggested</label>
+                <ol>
+                  {empDetails.details.TrainingSuggested.map((trainings, index) => {
+                    return (
+                      <li key={index}>
+                        <div style={{marginBottom: "10px"}}>
+                          <span>{trainings.text}</span>
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ol>
+
+                <br/><br/>
+
+                <label>Trainings Completed</label>
+                <ol>
+                  {empDetails.details.TrainingsReceived.map((trainings, index) => {
+                    return (
+                      <li key={index}>
+                        <div style={{marginBottom: "10px"}}>
+                          <span>{trainings.text}</span>
                         </div>
                       </li>
                     );
